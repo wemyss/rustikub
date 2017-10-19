@@ -1,0 +1,6 @@
+[package]
+name = "rustikub"
+version = "0.1.0"
+authors = ["Sam Wemyss <samuel.wemyss@gmail.com>"]
+
+[dependencies]
