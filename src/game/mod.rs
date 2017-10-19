@@ -15,19 +15,19 @@ pub struct Game {
 }
 
 impl Game {
-    // add code here
-    pub fn new() -> Game {
-    	Game {
-    		board: Vec::new(),
-    		hand: Vec::new(),
-    	}
-    }
+	// add code here
+	pub fn new() -> Game {
+		Game {
+			board: Vec::new(),
+			hand: Vec::new(),
+		}
+	}
 
-    pub fn load(&self, filename: &str) {
-    	let f = File::open("data.txt")
-    		.expect("Failed to open file");
+	pub fn load(&self, filename: &str) {
+		let f = File::open("data.txt")
+			.expect("Failed to open file");
 
-    	// check line length == 2
+		// check line length == 2
 		let mut reader = BufReader::new(f);
 
 		let board = utils::read_line(&mut reader);
@@ -35,7 +35,7 @@ impl Game {
 
 		println!("{:?}", board);
 		println!("{:?}", hand);
-    }
+	}
 
-    fn parse() {}
+	fn parse() {}
 }
