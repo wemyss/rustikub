@@ -37,5 +37,10 @@ impl Game {
 		println!("{:?}", hand);
 	}
 
-	fn parse() {}
+	fn parse(&self, board: &str, hand: &str) {
+		self.board =
+			board.split_whitespace()
+			.map(|tile| Tile::new(&tile))
+			.collect();
+	}
 }
