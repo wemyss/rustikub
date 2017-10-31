@@ -23,7 +23,7 @@ impl Game {
 		}
 	}
 
-	pub fn load(&self, filename: &str) {
+	pub fn load(&mut self, filename: &str) {
 		let f = File::open("data.txt")
 			.expect("Failed to open file");
 
@@ -35,9 +35,11 @@ impl Game {
 
 		println!("{:?}", board);
 		println!("{:?}", hand);
+
+		self.parse(&board, &hand)
 	}
 
-	fn parse(&self, board: &str, hand: &str) {
+	fn parse(&mut self, board: &str, hand: &str) {
 		self.board =
 			board.split_whitespace()
 			.map(|tile| Tile::new(&tile))

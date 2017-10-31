@@ -6,5 +6,5 @@ pub fn read_line<R: BufRead>(reader: &mut R) -> String {
 	reader.read_line(&mut line)
 		.expect("Couldn't read line");
 
-	line
+	String::from(line.trim())
 }

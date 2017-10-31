@@ -1,4 +1,3 @@
-use std::num::ParseIntError;
 use std::str::FromStr;
 
 pub enum Color {
@@ -10,7 +9,7 @@ pub enum Color {
 }
 
 impl FromStr for Color {
-    type Err = ParseIntError;
+    type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
     	match s {
@@ -19,7 +18,7 @@ impl FromStr for Color {
 			"r" => Ok(Color::Red),
 			"y" => Ok(Color::Yellow),
 			"j" => Ok(Color::Joker),
-			_ => Err(()),
+			_ => Err("not a valid value"),
 		}
     }
 }
