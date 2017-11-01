@@ -14,6 +14,17 @@ pub struct Game {
 	hand: Vec<Tile>,
 }
 
+fn parse(tiles: &str) -> Vec<Tile> {
+
+	// 1. split tiles string into list of tile strings
+	// 2. For each tile string generate specified tile/s
+	// 3. Collection
+	tiles.split_whitespace()
+		.map(|tile| Tile::new(&tile))
+		.collect()
+}
+
+
 impl Game {
 	// add code here
 	pub fn new() -> Game {
@@ -23,7 +34,7 @@ impl Game {
 		}
 	}
 
-	pub fn load(&mut self, filename: &str) {
+	pub fn load(filename: &str) -> Game {
 		let f = File::open("data.txt")
 			.expect("Failed to open file");
 
@@ -36,13 +47,9 @@ impl Game {
 		println!("{:?}", board);
 		println!("{:?}", hand);
 
-		self.parse(&board, &hand)
-	}
-
-	fn parse(&mut self, board: &str, hand: &str) {
-		self.board =
-			board.split_whitespace()
-			.map(|tile| Tile::new(&tile))
-			.collect();
+		Game {
+			board: parse(&board),
+			hand: parse(&hand),
+		}
 	}
 }

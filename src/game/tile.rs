@@ -31,6 +31,7 @@ pub struct Tile {
 impl Tile {
 	pub fn new(tile: &str) -> Tile {
 		// Split string into 2. e.g. B11 -> B, 11
+
 		let v: Vec<&str> = tile.splitn(2, |c: char| c.is_digit(10)).collect();
 
 		Tile {

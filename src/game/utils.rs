@@ -8,3 +8,12 @@ pub fn read_line<R: BufRead>(reader: &mut R) -> String {
 
 	String::from(line.trim())
 }
+
+
+
+pub fn parse_number_range(range: &str) -> Vec<u8> {
+	range
+		.split('-')
+		.map(|x| x.parse::<u8>().unwrap())
+		.collect()
+}

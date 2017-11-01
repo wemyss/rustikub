@@ -14,6 +14,5 @@ use game::Game;
 mod game;
 
 fn main() {
-	let mut g = Game::new();
-	g.load("data.txt");
+	let g = Game::load("data.txt");
 }
