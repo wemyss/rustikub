@@ -1,5 +1,7 @@
 # Rustikub - A rummikub solver in Rust
 
+[![Build Status](https://travis-ci.org/wemyss/rustikub.svg?branch=master)](https://travis-ci.org/wemyss/rustikub)
+
 ## Data file format
 Colors:
 ```
