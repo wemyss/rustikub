@@ -40,3 +40,34 @@ impl Tile {
 		}
 	}
 }
+
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn parse_color_black() {
+		assert_eq!(Color::Black, "b".parse::<Color>());
+    }
+	
+	#[test]
+    fn parse_color_blue() {
+		assert_eq!(Color::Blue, "l".parse::<Color>());
+    }
+	
+	#[test]
+    fn parse_color_red() {
+		assert_eq!(Color::Red, "r".parse::<Color>());
+    }
+	
+	#[test]
+    fn parse_color_yellow() {
+		assert_eq!(Color::Yellow, "y".parse::<Color>());
+    }
+	
+	#[test]
+    fn parse_color_joker() {
+		assert_eq!(Color::Joker, "j".parse::<Color>());
+    }
+	
+	//TODO: fuzz test
+}
