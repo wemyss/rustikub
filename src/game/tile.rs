@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+#[derive(Debug, PartialEq)]
 pub enum Color {
 	Black,
 	Blue,
@@ -44,30 +45,32 @@ impl Tile {
 
 #[cfg(test)]
 mod tests {
+	use super::*;
+
     #[test]
     fn parse_color_black() {
-		assert_eq!(Color::Black, "b".parse::<Color>());
+		assert_eq!(Color::Black, "b".parse::<Color>().unwrap());
     }
-	
+
 	#[test]
     fn parse_color_blue() {
-		assert_eq!(Color::Blue, "l".parse::<Color>());
+		assert_eq!(Color::Blue, "l".parse::<Color>().unwrap());
     }
-	
+
 	#[test]
     fn parse_color_red() {
-		assert_eq!(Color::Red, "r".parse::<Color>());
+		assert_eq!(Color::Red, "r".parse::<Color>().unwrap());
     }
-	
+
 	#[test]
     fn parse_color_yellow() {
-		assert_eq!(Color::Yellow, "y".parse::<Color>());
+		assert_eq!(Color::Yellow, "y".parse::<Color>().unwrap());
     }
-	
+
 	#[test]
     fn parse_color_joker() {
-		assert_eq!(Color::Joker, "j".parse::<Color>());
+		assert_eq!(Color::Joker, "j".parse::<Color>().unwrap());
     }
-	
+
 	//TODO: fuzz test
 }
