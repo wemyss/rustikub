@@ -6,4 +6,6 @@ mod game;
 
 fn main() {
 	let g = Game::load("data.txt");
+
+	println!("{:?}", g);
 }

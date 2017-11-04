@@ -1,4 +1,3 @@
-use std::str::FromStr;
 
 #[derive(Debug, PartialEq)]
 pub enum Color {
@@ -9,35 +8,29 @@ pub enum Color {
 	Joker,
 }
 
-impl FromStr for Color {
-	type Err = &'static str;
 
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		match s {
-			"b" => Ok(Color::Black),
-			"l" => Ok(Color::Blue),
-			"r" => Ok(Color::Red),
-			"y" => Ok(Color::Yellow),
-			"j" => Ok(Color::Joker),
-			_ => Err("not a valid value"),
-		}
+pub fn new_color(s: char) -> Result<Color, &'static str>{
+	match s {
+		'b' => Ok(Color::Black),
+		'l' => Ok(Color::Blue),
+		'r' => Ok(Color::Red),
+		'y' => Ok(Color::Yellow),
+		'j' => Ok(Color::Joker),
+		_ => Err("not a valid value"),
 	}
 }
 
+#[derive(Debug)]
 pub struct Tile {
 	value: u8,
 	color: Color,
 }
 
 impl Tile {
-	pub fn new(tile: &str) -> Tile {
-		// Split string into 2. e.g. B11 -> B, 11
-
-		let v: Vec<&str> = tile.splitn(2, |c: char| c.is_digit(10)).collect();
-
+	pub fn new(color: char, num: u8) -> Tile {
 		Tile {
-			value: v[1].parse().unwrap(),
-			color: v[0].parse::<Color>().unwrap(),
+			value: num,
+			color: new_color(color).unwrap(),
 		}
 	}
 }
@@ -48,28 +41,28 @@ mod tests {
 	use super::*;
 
 	#[test]
-	fn parse_color_black() {
-		assert_eq!(Color::Black, "b".parse::<Color>().unwrap());
+	fn new_color_black() {
+		assert_eq!(Color::Black, new_color('b').unwrap());
 	}
 
 	#[test]
-	fn parse_color_blue() {
-		assert_eq!(Color::Blue, "l".parse::<Color>().unwrap());
+	fn new_color_blue() {
+		assert_eq!(Color::Blue, new_color('l').unwrap());
 	}
 
 	#[test]
-	fn parse_color_red() {
-		assert_eq!(Color::Red, "r".parse::<Color>().unwrap());
+	fn new_color_red() {
+		assert_eq!(Color::Red, new_color('r').unwrap());
 	}
 
 	#[test]
-	fn parse_color_yellow() {
-		assert_eq!(Color::Yellow, "y".parse::<Color>().unwrap());
+	fn new_color_yellow() {
+		assert_eq!(Color::Yellow, new_color('y').unwrap());
 	}
 
 	#[test]
-	fn parse_color_joker() {
-		assert_eq!(Color::Joker, "j".parse::<Color>().unwrap());
+	fn new_color_joker() {
+		assert_eq!(Color::Joker, new_color('j').unwrap());
 	}
 
 	//TODO: fuzz test

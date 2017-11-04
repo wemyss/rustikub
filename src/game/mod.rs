@@ -8,7 +8,7 @@ use std::fs::File;
 use std::io::{BufReader};
 
 
-
+#[derive(Debug)]
 pub struct Game {
 	board: Vec<Tile>,
 	hand: Vec<Tile>,
@@ -16,13 +16,18 @@ pub struct Game {
 
 fn parse(tiles: &str) -> Vec<Tile> {
 
-	// 1. split tiles string into list of tile strings
-	// 2. For each tile string generate specified tile/s
-	// 3. Collection
 	tiles.split_whitespace()
-		.map(|tile| Tile::new(&tile))
+		.flat_map(|tile| {
+			let (colors, nums) = tile.split_at(tile.find(char::is_numeric).unwrap());
+			let nums = utils::parse_number_range(nums);
+
+			println!("{:?}", colors);
+			println!("{:?}", nums);
+			nums.flat_map(move |num| colors.chars().map(move |c| Tile::new(c, num)))
+		})
 		.collect()
 }
+
 
 
 impl Game {
@@ -44,8 +49,8 @@ impl Game {
 		let board = utils::read_line(&mut reader);
 		let hand = utils::read_line(&mut reader);
 
-		println!("{:?}", board);
-		println!("{:?}", hand);
+		println!("BOARD: {:?}", board);
+		println!("HAND: {:?}", hand);
 
 		Game {
 			board: parse(&board),
