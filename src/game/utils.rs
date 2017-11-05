@@ -33,31 +33,49 @@ mod tests {
 	// TODO: do these tests better
 	#[test]
 	fn parse_number_range_zero() {
-		assert_eq!(0, parse_number_range("0").sum::<u8>());
+		assert_eq!(
+			vec![0],
+			parse_number_range("0").collect::<Vec<u8>>()
+		);
 	}
 
 	#[test]
 	fn parse_number_range_seven() {
-		assert_eq!(7, parse_number_range("7").sum::<u8>());
+		assert_eq!(
+			vec![7],
+			parse_number_range("7").collect::<Vec<u8>>()
+		);
 	}
 
 	#[test]
 	fn parse_number_range_zero_to_zero() {
-		assert_eq!(0, parse_number_range("0-0").sum::<u8>());
+		assert_eq!(
+			vec![0],
+			parse_number_range("0-0").collect::<Vec<u8>>()
+		);
 	}
 
 	#[test]
 	fn parse_number_range_seven_to_thirteen() {
-		assert_eq!(25, parse_number_range("12-13").sum::<u8>());
+		assert_eq!(
+			vec![7,8,9,10,11,12,13],
+			parse_number_range("7-13").collect::<Vec<u8>>()
+		);
 	}
 
 	#[test]
 	fn parse_number_range_zero_to_eleven() {
-		assert_eq!((0..11), parse_number_range("0-11"));
+		assert_eq!(
+			vec![0,1,2,3,4,5,6,7,8,9,10,11],
+			parse_number_range("0-11").collect::<Vec<u8>>()
+		);
 	}
 
 	#[test]
-	fn parse_number_range_zero_to_max() {
-		assert_eq!((0..255), parse_number_range("0-254"));
+	fn parse_number_range_min_to_max() {
+		assert_eq!(
+			(u8::min_value()..u8::max_value()).collect::<Vec<u8>>(),
+			parse_number_range("0-254").collect::<Vec<u8>>()
+		);
 	}
 }
