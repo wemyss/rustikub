@@ -11,8 +11,6 @@ pub fn read_line<R: BufRead>(reader: &mut R) -> String {
 }
 
 
-
-
 pub fn parse_number_range(range: &str) -> Range<u8> {
 
 	let mut range = range
