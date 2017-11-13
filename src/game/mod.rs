@@ -41,15 +41,17 @@ impl Game {
 		}
 	}
 
-	pub fn validate() {}
+	pub fn validate_set() {
+
+	}
 
 	pub fn solve() {}
 }
 
 /// Converts a string representing tiles into a vector of Tile objects
 ///
-/// `parse_tiles()` returns a vector of tiles that each include the color and
-/// number value of that tile.
+/// `parse_tiles()` returns a vector of tiles. Each tile includes the color and
+/// numerical value of that tile. e.g Red 7
 ///
 /// # Examples
 /// ```
