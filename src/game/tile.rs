@@ -8,6 +8,8 @@ pub enum Color {
 	Joker,
 }
 
+// const COLORS: [Color; 4] = [ Color::Black, Color::Blue, Color::Red, Color::Yellow ];
+
 
 pub fn new_color(s: char) -> Result<Color, &'static str>{
 	match s {
@@ -19,6 +21,7 @@ pub fn new_color(s: char) -> Result<Color, &'static str>{
 		_ => Err("not a valid value"),
 	}
 }
+
 
 #[derive(Debug, PartialEq)]
 pub struct Tile {
