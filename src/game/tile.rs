@@ -1,5 +1,5 @@
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Color {
 	Black,
 	Blue,
@@ -7,9 +7,6 @@ pub enum Color {
 	Yellow,
 	Joker,
 }
-
-// const COLORS: [Color; 4] = [ Color::Black, Color::Blue, Color::Red, Color::Yellow ];
-
 
 pub fn new_color(s: char) -> Result<Color, &'static str>{
 	match s {
@@ -23,7 +20,7 @@ pub fn new_color(s: char) -> Result<Color, &'static str>{
 }
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Tile {
 	value: Option<u8>,
 	color: Color,
@@ -74,7 +71,6 @@ mod tests {
 	fn new_color_joker() {
 		assert_eq!(Color::Joker, new_color('j').unwrap());
 	}
-	//TODO: fuzz test
 
 	// struct Tile
 	#[test]
