@@ -41,3 +41,8 @@ ry1-3       # red 1, 2, 3 and yellow 1, 2, 3
 - Compute optimal solution in < 1s
 - Parallelise what I can
 - Easy to use
+
+## Shoutouts
+
+- Ideas drawn from [Solving Rummikub Problems by Integer Linear Programming](https://pdfs.semanticscholar.org/ab00/c1bfe35e21a2edb7287234af03f74a3ee3ae.pdf) by D. Hertog and P. Hulshof.
+- Some inspiration from [gregorias/rummikubsolver](https://github.com/gregorias/rummikubsolver) for generating tile combinations.

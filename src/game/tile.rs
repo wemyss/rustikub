@@ -1,4 +1,3 @@
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Color {
 	Black,
@@ -7,6 +6,8 @@ pub enum Color {
 	Yellow,
 	Joker,
 }
+
+pub const ALL_COLORS: [Color; 4] = [Color::Black, Color::Blue, Color::Red, Color::Yellow];
 
 pub fn new_color(s: char) -> Result<Color, &'static str>{
 	match s {
@@ -29,13 +30,17 @@ pub struct Tile {
 impl Tile {
 	pub fn new(color: char, num: Option<u8>) -> Tile {
 
+		Tile::create(new_color(color).unwrap(), num)
+	}
+
+	pub fn create(color: Color, num: Option<u8>) -> Tile {
 		let val = match color {
-			'j' => None,
+			Color::Joker => None,
 			_ => num,
 		};
 
 		Tile {
-			color: new_color(color).unwrap(),
+			color: color,
 			value: val,
 		}
 	}

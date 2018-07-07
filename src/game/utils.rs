@@ -1,10 +1,10 @@
 use std::io::{BufRead};
-use game::tile::Tile;
+use game::tile::{ALL_COLORS, Color, Tile};
 use std::ops::Range;
 
-const COLORS: &'static str = "blry";
 const NUM_JOKERS: [u8; 3] = [0, 1, 2];
 const RUN_LENGTHS: [u8; 3] = [3, 4, 5];
+const COLOR_RUN_LENGTHS: [u8; 2] = [3, 4];
 const VALUES: [u8; 13] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 const MIN_VALUE: u8 = 1;
 const MAX_VALUE: u8 = 13;
@@ -32,8 +32,8 @@ pub fn parse_number_range(range: &str) -> Range<u8> {
 }
 
 
-/// Generate all number combinations for a given run size and a tile pool to choose from
-fn generate_combinations(tile_set: &[u8], run_size: usize) -> Vec<Vec<u8>> {
+/// Generate all combinations for a given run size and a tile pool to choose from
+fn generate_combinations<T: Copy>(tile_set: &[T], run_size: u8) -> Vec<Vec<T>> {
 	match tile_set.is_empty() {
 		true =>
 			match run_size {
@@ -61,20 +61,20 @@ fn generate_combinations(tile_set: &[u8], run_size: usize) -> Vec<Vec<u8>> {
 	}
 }
 
-fn generate_sequential_runs(color: char, length: usize, joker_count: u8) -> Vec<Vec<Tile>> {
+fn generate_sequential_runs(color: Color, length: u8, joker_count: u8) -> Vec<Vec<Tile>> {
 	let mut runs: Vec<Vec<Tile>> = vec![];
+	let range_length = (MAX_VALUE - length + 1) as usize;
 
-	for i in 0..(MAX_VALUE as usize - length + 1) {
-		let combinations = generate_combinations(&VALUES[i..(i+length)], length - joker_count as usize);
+	for i in 0..range_length {
+		let combinations = generate_combinations(&VALUES[i..(i+(length as usize))], length - joker_count);
 		for c in combinations {
-			runs.push(c
-				.iter()
-				.map(|t| Tile::new(color, Some(t.clone())))
-				.collect()
+			runs.push(
+				c.iter()
+				 .map(|t| Tile::create(color, Some(t.clone())))
+				 .collect()
 			);
 		}
 	}
-
 
 	if joker_count > 0 {
 		// Add the joker/s in to each run
@@ -91,12 +91,12 @@ fn generate_sequential_runs(color: char, length: usize, joker_count: u8) -> Vec<
 ///
 /// Generates all sequential runs for all colors. Also includes runs with 0 or more jokers.
 pub fn generate_all_sequential_runs() -> Vec<Vec<Tile>> {
-	// for each color
+
 	let mut tiles = Vec::new();
-	for color in COLORS.chars() {
+	for color in ALL_COLORS.iter() {
 		for &length in RUN_LENGTHS.iter() {
 			for &joker_count in NUM_JOKERS.iter() {
-				tiles.append(&mut generate_sequential_runs(color, length as usize, joker_count));
+				tiles.append(&mut generate_sequential_runs(*color, length, joker_count));
 			}
 		}
 	}
@@ -105,15 +105,45 @@ pub fn generate_all_sequential_runs() -> Vec<Vec<Tile>> {
 }
 
 
+// generateAllColorSets :: Int -> Int -> [[Tile]]
+// generateAllColorSets jokerCount setSize = do
+//     colorComb <- colorCombs
+//     value <- allValues
+//     return $ jokers ++ (map (\c -> ValueTile (value, c)) colorComb)
+//   where
+//     colorCombs = generateCombinations allColors $ setSize - jokerCount
+//     jokers = replicate jokerCount Joker
+
+/// Generates the color combinations for a given set size and joker count to use
+pub fn generate_color_runs(joker_count: u8, length: u8) -> Vec<Vec<Color>> {
+	let mut runs: Vec<Vec<Color>> = vec![];
+
+	for mut combination in generate_combinations(&ALL_COLORS, length - joker_count) {
+		for _ in 0..joker_count {
+			combination.push(Color::Joker)
+		}
+		runs.push(combination);
+	}
+	runs
+
+}
+
+
+
 
 #[cfg(test)]
 mod tests {
 	use super::*;
 
 	#[test]
+	fn generate_color_runs_test() {
+		assert_eq!(generate_color_runs(2, 4), [[]]);
+	}
+
+	#[test]
 	fn generate_combinations_test_runsize_3() {
 		assert_eq!(
-			generate_combinations(&[1,2,3,4,5], 2),
+			generate_combinations(&[1,2,3,4,5], 3),
 			[[1,2,3],[1,2,4],[1,2,5],[1,3,4],[1,3,5],[1,4,5],[2,3,4],[2,3,5],[2,4,5],[3,4,5]]
 		);
 	}
@@ -219,7 +249,7 @@ mod tests {
 					Tile::new('y', Some(13)),
 				],
 			],
-			generate_sequential_runs('y', 3, 1)
+			generate_sequential_runs(Color::Yellow, 5, 0)
 		);
 	}
 
