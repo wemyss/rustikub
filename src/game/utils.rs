@@ -1,6 +1,7 @@
 use std::io::{BufRead};
 use game::tile::{ALL_COLORS, Color, Tile};
 use std::ops::Range;
+use std::cmp;
 
 const NUM_JOKERS: [u8; 3] = [0, 1, 2];
 const RUN_LENGTHS: [u8; 3] = [3, 4, 5];
@@ -63,11 +64,18 @@ fn generate_combinations<T: Copy>(tile_set: &[T], run_size: u8) -> Vec<Vec<T>> {
 
 fn generate_sequential_runs(color: Color, length: u8, joker_count: u8) -> Vec<Vec<Tile>> {
 	let mut runs: Vec<Vec<Tile>> = Vec::new();
-	let range_length = (MAX_VALUE - length + 1) as usize;
+	let range_length = (MAX_VALUE - length + joker_count + 1) as usize;
 
-	for i in 0..range_length {
-		let combinations = generate_combinations(&VALUES[i..(i+(length as usize))], length - joker_count);
-		for c in combinations {
+	for i in 1..(range_length+1) {
+		let end = cmp::min(
+			i + (length as usize) - 1,
+			MAX_VALUE as usize
+		);
+
+		let combinations = generate_combinations(&VALUES[i..end], length - joker_count - 1);
+
+		for mut c in combinations {
+			c.insert(0, i as u8);
 			runs.push(
 				c.iter()
 				 .map(|v| Tile::create(color, Some(*v)))
@@ -104,16 +112,6 @@ pub fn generate_all_sequential_runs() -> Vec<Vec<Tile>> {
 }
 
 
-// generateAllColorSets :: Int -> Int -> [[Tile]]
-// generateAllColorSets jokerCount setSize = do
-//     colorComb <- colorCombs
-//     value <- allValues
-//     return $ jokers ++ (map (\c -> ValueTile (value, c)) colorComb)
-//   where
-//     colorCombs = generateCombinations allColors $ setSize - jokerCount
-//     jokers = replicate jokerCount Joker
-
-
 /// Generates the color combinations for a given set size and joker count to use
 fn generate_color_runs(joker_count: u8, length: u8) -> Vec<Vec<Color>> {
 	let mut runs = Vec::new();
@@ -134,6 +132,7 @@ fn generate_color_runs(joker_count: u8, length: u8) -> Vec<Vec<Color>> {
 	runs
 }
 
+/// Generates all the color combinations possible in rummikub
 pub fn generate_all_color_runs() -> Vec<Vec<Tile>> {
 	let mut runs = Vec::new();
 
@@ -166,7 +165,7 @@ mod tests {
 
 	#[test]
 	fn generate_all_sequential_runs_test() {
-		assert_eq!(generate_all_sequential_runs().len(), 901);
+		assert_eq!(generate_all_sequential_runs().len(), 900);
 	}
 
 
@@ -175,9 +174,25 @@ mod tests {
 		assert_eq!(generate_all_color_runs().len(), 273);
 	}
 
+
+	#[test]
+	fn generate_sequential_runs_length3_joker2_test() {
+		assert_eq!(generate_sequential_runs(Color::Black, 3, 2).len(), 13);
+	}
+
+	#[test]
+	fn generate_sequential_runs_length4_joker2_test() {
+		assert_eq!(generate_sequential_runs(Color::Black, 4, 2).len(), 33);
+	}
+
+	#[test]
+	fn generate_sequential_runs_length5_joker2_test() {
+		assert_eq!(generate_sequential_runs(Color::Black, 5, 2).len(), 58);
+	}
+
 	#[test]
 	fn generate_sequential_runs_length3_joker1_test() {
-		assert_eq!(generate_sequential_runs(Color::Black, 3, 1), [[]]);
+		assert_eq!(generate_sequential_runs(Color::Black, 3, 1).len(), 23);
 	}
 
 	#[test]
@@ -275,6 +290,15 @@ mod tests {
 				],
 			],
 			generate_sequential_runs(Color::Yellow, 5, 0)
+		);
+	}
+
+
+	#[test]
+	fn generate_combinations_test_runsize_1() {
+		assert_eq!(
+			generate_combinations(&[1,2,3,4,5], 1),
+			[[1],[2],[3],[4],[5]]
 		);
 	}
 
