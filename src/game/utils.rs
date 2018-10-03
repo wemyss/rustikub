@@ -113,7 +113,7 @@ pub fn generate_all_sequential_runs() -> Vec<Vec<Tile>> {
 
 
 /// Generates the color combinations for a given set size and joker count to use
-fn generate_color_runs(joker_count: u8, length: u8) -> Vec<Vec<Color>> {
+fn generate_color_runs(length: u8, joker_count: u8) -> Vec<Vec<Color>> {
 	let mut runs = Vec::new();
 
 	if length == 3 && joker_count == 2 {
@@ -138,7 +138,7 @@ pub fn generate_all_color_runs() -> Vec<Vec<Tile>> {
 
 	for joker_count in NUM_JOKERS.iter() {
 		for run_length in COLOR_RUN_LENGTHS.iter() {
-			for color_set in generate_color_runs(*joker_count, *run_length) {
+			for color_set in generate_color_runs(*run_length, *joker_count) {
 				for val in VALUES.iter() {
 					runs.push(
 						color_set
@@ -157,23 +157,55 @@ pub fn generate_all_color_runs() -> Vec<Vec<Tile>> {
 
 
 
-
-
 #[cfg(test)]
 mod tests {
 	use super::*;
 
-	#[test]
-	fn generate_all_sequential_runs_test() {
-		assert_eq!(generate_all_sequential_runs().len(), 900);
-	}
-
-
+	// Color
+	// ------------------------------------------
 	#[test]
 	fn generate_all_color_runs_test() {
 		assert_eq!(generate_all_color_runs().len(), 273);
 	}
 
+	#[test]
+	fn generate_color_runs_length3_joker2_test() {
+		// already included in sequential runs
+		assert_eq!(generate_color_runs(3,2).len(), 0);
+	}
+
+	#[test]
+	fn generate_color_runs_length4_joker2_test() {
+		assert_eq!(generate_color_runs(4,2).len(), 6);
+	}
+
+	#[test]
+	fn generate_color_runs_length3_joker1_test() {
+		assert_eq!(generate_color_runs(3,1).len(), 6);
+	}
+
+	#[test]
+	fn generate_color_runs_length4_joker1_test() {
+		assert_eq!(generate_color_runs(4,1).len(), 4);
+	}
+
+	#[test]
+	fn generate_color_runs_length3_joker0_test() {
+		assert_eq!(generate_color_runs(3,0).len(), 4);
+	}
+
+	#[test]
+	fn generate_color_runs_length4_joker0_test() {
+		assert_eq!(generate_color_runs(4,0).len(), 1);
+	}
+
+
+	// Sequential
+	// ------------------------------------------
+	#[test]
+	fn generate_all_sequential_runs_test() {
+		assert_eq!(generate_all_sequential_runs().len(), 900);
+	}
 
 	#[test]
 	fn generate_sequential_runs_length3_joker2_test() {
@@ -205,19 +237,18 @@ mod tests {
 		assert_eq!(generate_sequential_runs(Color::Black, 5, 1).len(), 37);
 	}
 
-
 	#[test]
-	fn generate_sequential_runs_length3_test() {
+	fn generate_sequential_runs_length3_joker0_test() {
 		assert_eq!(generate_sequential_runs(Color::Black, 3, 0).len(), 11);
 	}
 
 	#[test]
-	fn generate_sequential_runs_length4_test() {
+	fn generate_sequential_runs_length4_joker0_test() {
 		assert_eq!(generate_sequential_runs(Color::Black, 4, 0).len(), 10);
 	}
 
 	#[test]
-	fn generate_sequential_runs_length5_test() {
+	fn generate_sequential_runs_length5_joker0_test() {
 		assert_eq!(generate_sequential_runs(Color::Black, 5, 0).len(), 9);
 	}
 
@@ -294,6 +325,8 @@ mod tests {
 	}
 
 
+	// Combinations
+	// ------------------------------------------
 	#[test]
 	fn generate_combinations_test_runsize_1() {
 		assert_eq!(
@@ -342,7 +375,9 @@ mod tests {
 		);
 	}
 
-	// TODO: do these tests better
+
+	// Parse number range
+	// ------------------------------------------
 	#[test]
 	fn parse_number_range_zero() {
 		assert_eq!(
