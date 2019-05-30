@@ -29,7 +29,6 @@ pub struct Tile {
 
 impl Tile {
 	pub fn new(color: char, num: Option<u8>) -> Tile {
-
 		Tile::create(new_color(color).unwrap(), num)
 	}
 

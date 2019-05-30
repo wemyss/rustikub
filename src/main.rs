@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use game::Game;
 mod game;
+use game::Game;
 
 fn main() {
 	let g = Game::load("data.txt");

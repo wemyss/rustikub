@@ -1,6 +1,7 @@
 use self::tile::*;
 pub mod tile;
 pub mod utils;
+pub mod tile_runs;
 
 use std::fs::File;
 use std::io::{BufReader};
