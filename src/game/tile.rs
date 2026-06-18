@@ -21,7 +21,7 @@ pub fn new_color(s: char) -> Result<Color, &'static str>{
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Tile {
 	value: Option<u8>,
 	color: Color,
@@ -42,14 +42,6 @@ impl Tile {
 			color: color,
 			value: val,
 		}
-	}
-
-	pub fn color(&self) -> Color {
-		self.color
-	}
-
-	pub fn value(&self) -> Option<u8> {
-		self.value
 	}
 }
 

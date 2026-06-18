@@ -51,28 +51,22 @@ impl Game {
 		use good_lp::{default_solver, variable, variables, Expression, IntoAffineExpression, Solution, SolverModel};
 		use self::tile_runs::{color, sequential};
 
-		type TileKey = (Color, Option<u8>);
-
-		let mut total_counts: HashMap<TileKey, usize> = HashMap::new();
-		let mut hand_counts: HashMap<TileKey, usize> = HashMap::new();
-		let mut board_counts: HashMap<TileKey, usize> = HashMap::new();
-
-		let tile_key = |tile: &Tile| -> TileKey {
-			(tile.color(), tile.value())
-		};
+		let mut total_counts: HashMap<Tile, usize> = HashMap::new();
+		let mut hand_counts: HashMap<Tile, usize> = HashMap::new();
+		let mut board_counts: HashMap<Tile, usize> = HashMap::new();
 
 		// Count how many copies of each tile exist in the full pool (board + hand),
 		// and separately count board-only and hand-only inventory.
-		for tile in self.board.iter().chain(self.hand.iter()) {
-			*total_counts.entry(tile_key(tile)).or_default() += 1;
+		for tile in self.board.iter() {
+			let key = *tile;
+			*total_counts.entry(key).or_default() += 1;
+			*board_counts.entry(key).or_default() += 1;
 		}
 
 		for tile in self.hand.iter() {
-			*hand_counts.entry(tile_key(tile)).or_default() += 1;
-		}
-
-		for tile in self.board.iter() {
-			*board_counts.entry(tile_key(tile)).or_default() += 1;
+			let key = *tile;
+			*total_counts.entry(key).or_default() += 1;
+			*hand_counts.entry(key).or_default() += 1;
 		}
 
 		// Generate all candidate runs from the available run generators.
@@ -84,9 +78,9 @@ impl Game {
 
 		let mut run_infos = Vec::new();
 		for run in candidates {
-			let mut counts: HashMap<TileKey, usize> = HashMap::new();
+			let mut counts: HashMap<Tile, usize> = HashMap::new();
 			for tile in run.iter() {
-				*counts.entry(tile_key(tile)).or_default() += 1;
+				*counts.entry(*tile).or_default() += 1;
 			}
 
 			if counts.iter().all(|(key, &count)| total_counts.get(key).copied().unwrap_or(0) >= count) {
@@ -100,7 +94,7 @@ impl Game {
 
 		// One continuous variable per hand tile key representing how many of that
 		// tile type are used from the hand in selected runs.
-		let hand_vars: HashMap<TileKey, _> = hand_counts
+		let hand_vars: HashMap<Tile, _> = hand_counts
 			.iter()
 			.map(|(key, &count)| (*key, vars.add(variable().min(0.0).max(count as f64))))
 			.collect();
@@ -110,25 +104,25 @@ impl Game {
 
 		let mut problem = vars.maximise(objective).using(default_solver);
 
-		for (tile_key, &total) in total_counts.iter() {
+		for (key, &total) in total_counts.iter() {
 			let usage = run_vars
 				.iter()
 				.zip(run_infos.iter())
 				.fold(Expression::from(0.0), |acc, (run_var, (_, counts))| {
-					acc + *run_var * (*counts.get(tile_key).unwrap_or(&0) as f64)
+					acc + *run_var * (*counts.get(key).unwrap_or(&0) as f64)
 				});
 
 			// Do not use more tiles than exist in the pool.
 			problem = problem.with(usage.clone().leq(total as f64));
 
-			let board_total = board_counts.get(tile_key).copied().unwrap_or(0);
+			let board_total = board_counts.get(key).copied().unwrap_or(0);
 			if board_total > 0 {
 				// Ensure all board tiles remain covered by selected runs.
 				problem = problem.with(usage.clone().geq(board_total as f64));
 			}
 
 			// Link the hand usage variable to the total usage minus board coverage.
-			if let Some(hand_var) = hand_vars.get(tile_key) {
+			if let Some(hand_var) = hand_vars.get(key) {
 				problem = problem.with(
 					(*hand_var).into_expression().eq(usage - Expression::from(board_total as f64))
 				);
