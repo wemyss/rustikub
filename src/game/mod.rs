@@ -7,6 +7,100 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader};
 
+type CountsKey = Vec<(Tile, usize)>;
+type SearchKey = (usize, CountsKey, CountsKey);
+
+struct RunInfo {
+	run: Vec<Tile>,
+	counts: HashMap<Tile, usize>,
+	length: usize,
+}
+
+fn sorted_counts(map: &HashMap<Tile, usize>) -> CountsKey {
+	let mut entries: Vec<(Tile, usize)> = map.iter().map(|(&tile, &count)| (tile, count)).collect();
+	entries.sort_by_key(|(tile, _)| *tile);
+	entries
+}
+
+fn subtract_counts(
+	source: &HashMap<Tile, usize>,
+	subtract: &HashMap<Tile, usize>,
+) -> Option<HashMap<Tile, usize>> {
+	let mut result = source.clone();
+	for (tile, &count) in subtract.iter() {
+		let current = result.get(tile).copied().unwrap_or(0);
+		if count > current {
+			return None;
+		}
+		let remaining = current - count;
+		if remaining > 0 {
+			result.insert(*tile, remaining);
+		} else {
+			result.remove(tile);
+		}
+	}
+	Some(result)
+}
+
+fn subtract_board_counts(
+	board_remaining: &HashMap<Tile, usize>,
+	run_counts: &HashMap<Tile, usize>,
+) -> HashMap<Tile, usize> {
+	let mut updated = board_remaining.clone();
+	for (tile, &count) in run_counts.iter() {
+		if let Some(current) = updated.get_mut(tile) {
+			let used = std::cmp::min(*current, count);
+			*current -= used;
+			if *current == 0 {
+				updated.remove(tile);
+			}
+		}
+	}
+	updated
+}
+
+fn search_runs(
+	index: usize,
+	remaining_total: &HashMap<Tile, usize>,
+	remaining_board: &HashMap<Tile, usize>,
+	run_infos: &[RunInfo],
+	memo: &mut HashMap<SearchKey, Option<(usize, Vec<Vec<Tile>>) >>,
+) -> Option<(usize, Vec<Vec<Tile>>)> {
+	if index == run_infos.len() {
+		return if remaining_board.is_empty() {
+			Some((0, Vec::new()))
+		} else {
+			None
+		};
+	}
+
+	let key = (
+		index,
+		sorted_counts(remaining_total),
+		sorted_counts(remaining_board),
+	);
+	if let Some(cached) = memo.get(&key) {
+		return cached.clone();
+	}
+
+	let mut best = search_runs(index + 1, remaining_total, remaining_board, run_infos, memo);
+	let run_info = &run_infos[index];
+
+	if let Some(next_total) = subtract_counts(remaining_total, &run_info.counts) {
+		let next_board = subtract_board_counts(remaining_board, &run_info.counts);
+		if let Some((score, mut runs)) = search_runs(index + 1, &next_total, &next_board, run_infos, memo) {
+			let score = score + run_info.length;
+			if best.as_ref().map_or(true, |(best_score, _)| score > *best_score) {
+				runs.insert(0, run_info.run.clone());
+				best = Some((score, runs));
+			}
+		}
+	}
+
+	memo.insert(key, best.clone());
+	best
+}
+
 
 #[derive(Debug)]
 pub struct Game {
@@ -48,15 +142,11 @@ impl Game {
 	}
 
 	pub fn solve(&self) -> Result<Vec<Vec<Tile>>, String> {
-		use good_lp::{default_solver, variable, variables, Expression, IntoAffineExpression, Solution, SolverModel};
 		use self::tile_runs::{color, sequential};
 
 		let mut total_counts: HashMap<Tile, usize> = HashMap::new();
-		let mut hand_counts: HashMap<Tile, usize> = HashMap::new();
 		let mut board_counts: HashMap<Tile, usize> = HashMap::new();
 
-		// Count how many copies of each tile exist in the full pool (board + hand),
-		// and separately count board-only and hand-only inventory.
 		for tile in self.board.iter() {
 			let key = *tile;
 			*total_counts.entry(key).or_default() += 1;
@@ -66,11 +156,8 @@ impl Game {
 		for tile in self.hand.iter() {
 			let key = *tile;
 			*total_counts.entry(key).or_default() += 1;
-			*hand_counts.entry(key).or_default() += 1;
 		}
 
-		// Generate all candidate runs from the available run generators.
-		// Only keep candidates that can be assembled from the available pieces.
 		let candidates = sequential::generate_all_sequential_runs()
 			.into_iter()
 			.chain(color::generate_all_color_runs())
@@ -84,66 +171,18 @@ impl Game {
 			}
 
 			if counts.iter().all(|(key, &count)| total_counts.get(key).copied().unwrap_or(0) >= count) {
-				run_infos.push((run, counts));
+				let length = run.len();
+				run_infos.push(RunInfo { run, counts, length });
 			}
 		}
 
-		// One binary variable per candidate run: selected or not.
-		let mut vars = variables!();
-		let run_vars: Vec<_> = run_infos.iter().map(|_| vars.add(variable().binary())).collect();
+		run_infos.sort_by_key(|info| usize::MAX - info.length);
 
-		// One continuous variable per hand tile key representing how many of that
-		// tile type are used from the hand in selected runs.
-		let hand_vars: HashMap<Tile, _> = hand_counts
-			.iter()
-			.map(|(key, &count)| (*key, vars.add(variable().min(0.0).max(count as f64))))
-			.collect();
+		let mut memo: HashMap<SearchKey, Option<(usize, Vec<Vec<Tile>>)>> = HashMap::new();
+		let solution = search_runs(0, &total_counts, &board_counts, &run_infos, &mut memo)
+			.ok_or_else(|| String::from("No valid tile placement found"))?;
 
-		// Maximise usage of hand tiles.
-		let objective = hand_vars.values().fold(Expression::from(0.0), |acc, variable| acc + *variable);
-
-		let mut problem = vars.maximise(objective).using(default_solver);
-
-		for (key, &total) in total_counts.iter() {
-			let usage = run_vars
-				.iter()
-				.zip(run_infos.iter())
-				.fold(Expression::from(0.0), |acc, (run_var, (_, counts))| {
-					acc + *run_var * (*counts.get(key).unwrap_or(&0) as f64)
-				});
-
-			// Do not use more tiles than exist in the pool.
-			problem = problem.with(usage.clone().leq(total as f64));
-
-			let board_total = board_counts.get(key).copied().unwrap_or(0);
-			if board_total > 0 {
-				// Ensure all board tiles remain covered by selected runs.
-				problem = problem.with(usage.clone().geq(board_total as f64));
-			}
-
-			// Link the hand usage variable to the total usage minus board coverage.
-			if let Some(hand_var) = hand_vars.get(key) {
-				problem = problem.with(
-					(*hand_var).into_expression().eq(usage - Expression::from(board_total as f64))
-				);
-			}
-		}
-
-		// Solve the ILP and return the selected runs.
-		let solution = problem.solve().map_err(|e| e.to_string())?;
-		let selected_runs = run_vars
-			.iter()
-			.zip(run_infos.into_iter())
-			.filter_map(|(run_var, (run, _counts))| {
-				if solution.value(*run_var) > 0.5 {
-					Some(run)
-				} else {
-					None
-				}
-			})
-			.collect();
-
-		Ok(selected_runs)
+		Ok(solution.1)
 	}
 }
 

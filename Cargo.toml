@@ -5,4 +5,3 @@ authors = ["Sam Wemyss <samuel.wemyss@gmail.com>"]
 edition = "2024"
 
 [dependencies]
-good_lp = { version = "1.15.2", default-features = false, features = ["minilp"] }

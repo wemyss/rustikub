@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Color {
 	Black,
 	Blue,
@@ -21,7 +21,7 @@ pub fn new_color(s: char) -> Result<Color, &'static str>{
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Tile {
 	value: Option<u8>,
 	color: Color,
