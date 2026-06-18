@@ -1,5 +1,5 @@
 use super::shared::*;
-use game::tile::{ALL_COLORS, Color, Tile};
+use crate::game::tile::{ALL_COLORS, Color, Tile};
 
 /// Generates the color combinations for a given set size and joker count to use
 fn generate_color_runs(length: u8, joker_count: u8) -> Vec<Vec<Color>> {

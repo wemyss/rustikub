@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Color {
 	Black,
 	Blue,
@@ -42,6 +42,14 @@ impl Tile {
 			color: color,
 			value: val,
 		}
+	}
+
+	pub fn color(&self) -> Color {
+		self.color
+	}
+
+	pub fn value(&self) -> Option<u8> {
+		self.value
 	}
 }
 

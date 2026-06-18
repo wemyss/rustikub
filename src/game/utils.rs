@@ -18,7 +18,7 @@ pub fn parse_number_range(range: &str) -> Range<u8> {
 	let a = range.next().unwrap();
 	let b = range.next().unwrap_or(a);	// If there is no end bound, make b equal a
 
-	(a..(b+1))
+	a..(b+1)
 }
 
 #[cfg(test)]

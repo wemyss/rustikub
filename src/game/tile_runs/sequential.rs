@@ -1,5 +1,5 @@
 use super::shared::*;
-use game::tile::{ALL_COLORS, Color, Tile};
+use crate::game::tile::{ALL_COLORS, Color, Tile};
 use std::cmp;
 
 
