@@ -1,3 +1,6 @@
+use crate::game::tile_runs::color::generate_all_color_runs;
+use crate::game::tile_runs::sequential::generate_all_sequential_runs;
+
 use self::tile::*;
 pub mod tile;
 pub mod utils;
@@ -7,17 +10,17 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader};
 
-type CountsKey = Vec<(Tile, usize)>;
-type SearchKey = (usize, CountsKey, CountsKey);
+type CountsKey = Vec<(Tile, u8)>;
+type SearchKey = (u8, CountsKey, CountsKey);
 
 struct RunInfo {
 	run: Vec<Tile>,
-	counts: HashMap<Tile, usize>,
-	length: usize,
+	counts: HashMap<Tile, u8>,
+	length: u8,
 }
 
-fn sorted_counts(map: &HashMap<Tile, usize>) -> CountsKey {
-	let mut entries: Vec<(Tile, usize)> = map.iter().map(|(&tile, &count)| (tile, count)).collect();
+fn sorted_counts(map: &HashMap<Tile, u8>) -> CountsKey {
+	let mut entries: Vec<(Tile, u8)> = map.iter().map(|(&tile, &count)| (tile, count)).collect();
 	entries.sort_by_key(|(tile, _)| *tile);
 	entries
 }
@@ -110,13 +113,6 @@ pub struct Game {
 
 impl Game {
 
-	pub fn new() -> Game {
-		Game {
-			board: Vec::new(),
-			hand: Vec::new(),
-		}
-	}
-
 	/// Creates struct representing the game in the file
 	pub fn load(filename: &str) -> Game {
 		let f = File::open(filename)
@@ -137,40 +133,21 @@ impl Game {
 		}
 	}
 
-	pub fn validate_set() {
-
-	}
-
+    #[allow(dead_code)]
 	pub fn solve(&self) -> Result<Vec<Vec<Tile>>, String> {
-		use self::tile_runs::{color, sequential};
+		let mut input_tiles: HashMap<Tile, u8> = tiles_to_counts(self.board.iter().chain(self.hand.iter()).collect());
+		let mut board_only_tiles: HashMap<Tile, u8> = tiles_to_counts(self.board);
 
-		let mut total_counts: HashMap<Tile, usize> = HashMap::new();
-		let mut board_counts: HashMap<Tile, usize> = HashMap::new();
-
-		for tile in self.board.iter() {
-			let key = *tile;
-			*total_counts.entry(key).or_default() += 1;
-			*board_counts.entry(key).or_default() += 1;
-		}
-
-		for tile in self.hand.iter() {
-			let key = *tile;
-			*total_counts.entry(key).or_default() += 1;
-		}
-
-		let candidates = sequential::generate_all_sequential_runs()
+		let mut candidates = generate_all_sequential_runs()
 			.into_iter()
-			.chain(color::generate_all_color_runs())
+			.chain(generate_all_color_runs())
 			.collect::<Vec<_>>();
 
 		let mut run_infos = Vec::new();
 		for run in candidates {
-			let mut counts: HashMap<Tile, usize> = HashMap::new();
-			for tile in run.iter() {
-				*counts.entry(*tile).or_default() += 1;
-			}
+			let mut counts: HashMap<Tile, u8> = tiles_to_counts(run);
 
-			if counts.iter().all(|(key, &count)| total_counts.get(key).copied().unwrap_or(0) >= count) {
+			if counts.iter().all(|(key, &count)| input_tiles.get(key).is_some_and(|&v| count < v)) {
 				let length = run.len();
 				run_infos.push(RunInfo { run, counts, length });
 			}
@@ -179,11 +156,20 @@ impl Game {
 		run_infos.sort_by_key(|info| usize::MAX - info.length);
 
 		let mut memo: HashMap<SearchKey, Option<(usize, Vec<Vec<Tile>>)>> = HashMap::new();
-		let solution = search_runs(0, &total_counts, &board_counts, &run_infos, &mut memo)
+		let solution = search_runs(0, &input_tiles, &board_only_tiles, &run_infos, &mut memo)
 			.ok_or_else(|| String::from("No valid tile placement found"))?;
 
 		Ok(solution.1)
 	}
+}
+
+
+fn tiles_to_counts(tiles: impl IntoIterator<Item = Tile>) -> HashMap<Tile, u8> {
+	let mut counts = HashMap::new();
+	for tile in tiles {
+		*counts.entry(tile).or_default() += 1;
+	}
+	counts
 }
 
 /// Converts a string representing tiles into a vector of Tile objects
