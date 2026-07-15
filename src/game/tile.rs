@@ -1,12 +1,12 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(u8)]
 pub enum Color {
-	Black,
-	Blue,
-	Red,
-	Yellow,
-	Joker,
+	Black=1,
+	Blue=2,
+	Red=3,
+	Yellow=4,
+	Joker=0,
 }
-
 pub const ALL_COLORS: [Color; 4] = [Color::Black, Color::Blue, Color::Red, Color::Yellow];
 
 pub fn new_color(s: char) -> Result<Color, &'static str>{
@@ -23,8 +23,8 @@ pub fn new_color(s: char) -> Result<Color, &'static str>{
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Tile {
-	value: Option<u8>,
-	color: Color,
+	pub value: Option<u8>,
+	pub color: Color,
 }
 
 impl Tile {
@@ -105,5 +105,20 @@ mod tests {
 	#[test]
 	fn tile_new_joker_none() {
 		assert_eq!(Tile { color: Color::Joker, value: None }, Tile::new('j', None));
+	}
+
+	#[test]
+	fn tile_display_black_one() {
+		assert_eq!("b1", Tile::new('b', Some(1)).to_string());
+	}
+
+	#[test]
+	fn tile_display_yellow_ten() {
+		assert_eq!("y10", Tile::new('y', Some(10)).to_string());
+	}
+
+	#[test]
+	fn tile_display_joker() {
+		assert_eq!("j", Tile::new('j', Some(5)).to_string());
 	}
 }

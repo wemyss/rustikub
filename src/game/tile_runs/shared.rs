@@ -5,7 +5,6 @@ pub const VALUES: [u8; 13] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 pub const MIN_VALUE: u8 = 1;
 pub const MAX_VALUE: u8 = 13;
 
-
 /// Generate all combinations for a given run size and a tile pool to choose from
 pub fn generate_combinations<T: Copy>(tile_set: &[T], run_size: u8) -> Vec<Vec<T>> {
 	match tile_set.is_empty() {
