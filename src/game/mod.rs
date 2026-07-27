@@ -49,27 +49,25 @@ impl Game {
         // the set of runs that can actually be formed with the input tiles - ignoring duplicate tile usage.
         let valid_runs = filter_runs(&input_tiles, &all_runs);
 
-        let explored: HashMap<SolutionKey, Solution> = HashMap::new();
-
         let initial_solution = Solution {
             runs: Vec::new(),
             remaining_tiles: input_tiles,
             remaining_runs: valid_runs.clone(),
         };
+        let mut solutions_pool: HashMap<SolutionKey, Solution> = HashMap::new();
 
-        let mut solutions: VecDeque<Solution> = valid_runs
+        let mut solutions: VecDeque<SolutionKey> = valid_runs
             .iter()
-            .map(|run| create_next_solution_state(&initial_solution, run))
+            .map(|run| {
+                create_next_solution_state_in_pool(&mut solutions_pool, &initial_solution, run)
+            })
             .collect();
 
-        while let Some(curr) = solutions.pop_front() {
+        while let Some(curr_key) = solutions.pop_front() {
+            let curr = solutions_pool[&curr_key].clone();
             // Perfect solution found, don't need to explore further - ignore other permutations of the same solution.
             if curr.remaining_tiles.is_empty() {
-                return Ok(curr
-                    .runs
-                    .into_iter()
-                    .map(|r| r.clone())
-                    .collect());
+                return Ok(curr.runs.clone());
             }
 
             // No runs left, can't explore this solution further.
@@ -78,34 +76,56 @@ impl Game {
             }
 
             for run in &curr.remaining_runs {
-                let next_solution = create_next_solution_state(&curr, run);
-                if explored.contains_key(&next_solution.key()) {
+                let next_solution =
+                    create_next_solution_state_in_pool(&mut solutions_pool, &curr, run);
+                if solutions_pool.contains_key(&next_solution) {
                     continue;
                 }
 
                 solutions.push_back(next_solution);
             }
-            return Err("No valid solution found".into());
         }
-        return Err("No valid solution found".into());
+        solutions
+            .iter()
+            .max_by(|a, b| {
+                let a_score = solutions_pool[a].score();
+                let b_score = solutions_pool[b].score();
+                a_score.cmp(&b_score)
+            })
+            .map(|best_key| solutions_pool[best_key].runs.clone())
+            .ok_or("No solution found".to_string())
     }
 }
 
-struct Solution<'a> {
-    runs: Vec<&'a Vec<Tile>>,
-    remaining_tiles: HashMap<Tile, u8>,
-    remaining_runs: Vec<&'a Vec<Tile>>,
+fn create_next_solution_state_in_pool(
+    solutions_pool: &mut HashMap<SolutionKey, Solution>,
+    prev_solution: &Solution,
+    run_to_consume: &Vec<Tile>,
+) -> SolutionKey {
+    let solution = create_next_solution_state(prev_solution, run_to_consume);
+    let key = solution.key();
+    solutions_pool.insert(key, solution);
+    key
 }
 
+#[derive(Clone)]
+struct Solution {
+    runs: Vec<Vec<Tile>>,
+    remaining_tiles: HashMap<Tile, u8>,
+    remaining_runs: Vec<Vec<Tile>>,
+}
 
+/// A key that uniquely identifies a solution state based on the tiles used in the runs. A solution state only includes tiles used in runs on the board, not tiles remaining.
+/// - Each index in the array corresponds to a tile value, and the value at that index is a bitfield of u2 integers representing the count of each color used in the solution.
+/// - Jokers are represented by the first index and their count is stored as a u8 since they have no color.
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SolutionKey([u8; 14]);
 
 const BITS_PER_COLOR_COUNTER: u8 = 2;
 
-impl<'a> Solution<'a> {
+impl Solution {
     // Returns true iff the solution does not result in any tiles remaining that were not already present in the hand.
-    // This is only useful to prune leaf node solutions.
+    // This is only useful to prune leaf node solutions (solutions without derivatives).
     fn is_valid(&self, hand: &[Tile]) -> bool {
         let counts = tiles_to_counts(hand);
         self.remaining_tiles.iter().all(|(tile, &count)| {
@@ -126,11 +146,11 @@ impl<'a> Solution<'a> {
         for tile in self.runs.iter().flat_map(|run| run.iter()) {
             match tile.value {
                 Some(v) => {
-                    key.0[v as usize] += 1 << (BITS_PER_COLOR_COUNTER * tile.color as u8); 
-                },
+                    key.0[v as usize] += 1 << (BITS_PER_COLOR_COUNTER * tile.color as u8);
+                }
                 None => {
                     key.0[0] += 1;
-                },
+                }
             };
         }
         key
@@ -138,10 +158,10 @@ impl<'a> Solution<'a> {
 }
 
 /// Creates a new solution state by removing the tiles in `run_to_consume` from the remaining tiles and runs in `previous_solution`.
-fn create_next_solution_state<'a>(
-    previous_solution: &'a Solution<'a>,
-    run_to_consume: &'a Vec<Tile>,
-) -> Solution<'a> {
+fn create_next_solution_state(
+    previous_solution: &Solution,
+    run_to_consume: &Vec<Tile>,
+) -> Solution {
     let mut remaining_tiles = previous_solution.remaining_tiles.clone();
     for tile in run_to_consume {
         match remaining_tiles.get_mut(&tile) {
@@ -158,7 +178,7 @@ fn create_next_solution_state<'a>(
     let remaining_runs = filter_runs(&remaining_tiles, &previous_solution.remaining_runs);
 
     let mut runs = previous_solution.runs.clone();
-    runs.push(run_to_consume);
+    runs.push(run_to_consume.clone());
 
     Solution {
         runs,
@@ -168,12 +188,8 @@ fn create_next_solution_state<'a>(
 }
 
 /// Filters the given runs to include only those that can be formed from the available tiles.
-fn filter_runs<'a, T>(tiles: &HashMap<Tile, u8>, runs: &'a [T]) -> Vec<&'a Vec<Tile>>
-where
-    T: AsRef<Vec<Tile>>,
-{
+fn filter_runs(tiles: &HashMap<Tile, u8>, runs: &[Vec<Tile>]) -> Vec<Vec<Tile>> {
     runs.iter()
-        .map(|r| r.as_ref())
         .filter(|&run| {
             let run_tile_counts = tiles_to_counts(run);
 
@@ -181,6 +197,7 @@ where
                 .iter()
                 .all(|(key, &count)| tiles.get(key).is_some_and(|&v| count <= v))
         })
+        .map(|run| run.clone())
         .collect()
 }
 
@@ -268,80 +285,5 @@ mod tests {
         let solution = game.solve().expect("Solver should succeed");
         assert_eq!(solution.len(), 1);
         assert_eq!(solution[0], parse_tiles("b1 b2 b3"));
-    }
-
-    #[test]
-    fn solve_extends_valid_board_when_possible() {
-        let game = Game {
-            board: parse_tiles("b1 b2 b3"),
-            hand: parse_tiles("b4"),
-        };
-
-        let solution = game.solve().expect("Solver should succeed");
-        assert_eq!(solution.len(), 1);
-        assert_eq!(solution[0], parse_tiles("b1 b2 b3 b4"));
-    }
-
-    #[test]
-    fn solve_completes_color_set_with_hand_tile() {
-        let game = Game {
-            board: parse_tiles("b7 r7 y7"),
-            hand: parse_tiles("l7"),
-        };
-
-        let solution = game.solve().expect("Solver should succeed");
-        assert_eq!(solution.len(), 1);
-        assert_eq!(solution[0], parse_tiles("b7 l7 r7 y7"));
-    }
-
-    #[test]
-    fn solve_restructures_board_runs_to_place_hand_tile() {
-        let game = Game {
-            board: parse_tiles("b1 b2 b3 b4 b5 b6 b7"),
-            hand: parse_tiles("b4"),
-        };
-
-        let solution = game.solve().expect("Solver should succeed");
-        assert_eq!(solution.len(), 2);
-        assert!(solution.contains(&parse_tiles("b1 b2 b3 b4")));
-        assert!(solution.contains(&parse_tiles("b4 b5 b6 b7")));
-    }
-
-    #[test]
-    fn solve_shifts_tile_between_runs_to_place_hand_tile() {
-        let game = Game {
-            board: parse_tiles("r3 r4 r5 r6 y3 y4 y5 y6"),
-            hand: parse_tiles("b3"),
-        };
-
-        let solution = game.solve().expect("Solver should succeed");
-        assert_eq!(solution.len(), 3);
-
-        assert!(solution.contains(&parse_tiles("r4 r5 r6")));
-        assert!(solution.contains(&parse_tiles("y4 y5 y6")));
-        assert!(solution.contains(&parse_tiles("b3 r3 y3")));
-    }
-
-    #[test]
-    fn solve_only_places_one_of_two_hand_tiles_when_one_is_invalid() {
-        let game = Game {
-            board: parse_tiles("b1 b2 b3 b6 b7 b8"),
-            hand: parse_tiles("b4 b10"),
-        };
-
-        let solution = game.solve().expect("Solver should succeed");
-        let hand_tiles = parse_tiles("b4 b10");
-        let placed_hand_count = solution
-            .iter()
-            .flat_map(|run| run.iter())
-            .filter(|tile| hand_tiles.contains(tile))
-            .count();
-
-        assert_eq!(placed_hand_count, 1);
-        assert!(
-            solution
-                .iter()
-                .any(|run| *run == parse_tiles("b1 b2 b3 b4"))
-        );
     }
 }

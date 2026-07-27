@@ -4,7 +4,7 @@ use std::cmp;
 
 fn generate_sequential_runs(color: Color, length: u8, joker_count: u8) -> Vec<Vec<Tile>> {
     let mut runs: Vec<Vec<Tile>> = Vec::new();
-    let range_length = (MAX_VALUE - length + joker_count + 1);
+    let range_length = MAX_VALUE - length + joker_count + 1;
 
     for i in 1..(range_length + 1) {
         let end = cmp::min(i + length - 1, MAX_VALUE);

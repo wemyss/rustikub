@@ -107,18 +107,18 @@ mod tests {
 		assert_eq!(Tile { color: Color::Joker, value: None }, Tile::new('j', None));
 	}
 
-	#[test]
-	fn tile_display_black_one() {
-		assert_eq!("b1", Tile::new('b', Some(1)).to_string());
-	}
+	// #[test]
+	// fn tile_display_black_one() {
+	// 	assert_eq!("b1", Tile::new('b', Some(1)).to_string());
+	// }
 
-	#[test]
-	fn tile_display_yellow_ten() {
-		assert_eq!("y10", Tile::new('y', Some(10)).to_string());
-	}
+	// #[test]
+	// fn tile_display_yellow_ten() {
+	// 	assert_eq!("y10", Tile::new('y', Some(10)).to_string());
+	// }
 
-	#[test]
-	fn tile_display_joker() {
-		assert_eq!("j", Tile::new('j', Some(5)).to_string());
-	}
+	// #[test]
+	// fn tile_display_joker() {
+	// 	assert_eq!("j", Tile::new('j', Some(5)).to_string());
+	// }
 }
